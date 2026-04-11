@@ -1,0 +1,39 @@
+name: Deploy frontend to Yandex Object Storage
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+
+      - name: Upload to Yandex Object Storage
+        uses: yc-actions/yc-obj-storage-upload@v2
+        with:
+          yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
+          bucket: ${{ vars.S3_BUCKET }}
+          root: ./dist
+          include: '**'
+          cache-control: |
+            index.html: no-cache, no-store, must-revalidate
+            assets/*: public, max-age=31536000, immutable
