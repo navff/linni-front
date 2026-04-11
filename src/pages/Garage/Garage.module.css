@@ -1,0 +1,74 @@
+.page {
+  padding: 16px;
+  min-height: 100vh;
+  background: var(--color-bg);
+  padding-bottom: 90px;
+}
+
+.header {
+  margin-bottom: 20px;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.greeting {
+  font-size: 15px;
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error {
+  background: #ffebee;
+  color: #c62828;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.addBtn {
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  padding: 14px 28px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.addBtn:active {
+  opacity: 0.85;
+}

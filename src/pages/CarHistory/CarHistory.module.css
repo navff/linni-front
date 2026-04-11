@@ -1,0 +1,139 @@
+.page {
+  padding: 16px;
+  min-height: 100vh;
+  background: var(--color-bg);
+  padding-bottom: 90px;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.header {
+  margin-bottom: 16px;
+}
+
+.carName {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.mileage {
+  font-size: 15px;
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+}
+
+.headerActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.editBtn, .shareBtn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  transition: background 0.15s;
+}
+
+.editBtn:active, .shareBtn:active {
+  background: var(--color-surface-active);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.statCard {
+  background: var(--color-surface);
+  border-radius: 14px;
+  padding: 14px;
+  text-align: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+
+.statLabel {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+}
+
+.statValue {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+}
+
+.filters::-webkit-scrollbar {
+  display: none;
+}
+
+.filterBtn {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.filterBtn.active {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.error {
+  background: #ffebee;
+  color: #c62828;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}

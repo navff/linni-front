@@ -1,0 +1,150 @@
+.page {
+  padding: 16px;
+  min-height: 100vh;
+  background: var(--color-bg);
+  padding-bottom: 32px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 20px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.hintInline {
+  color: var(--color-primary);
+  font-size: 12px;
+}
+
+.categoryRow {
+  display: flex;
+  gap: 8px;
+}
+
+.catBtn {
+  flex: 1;
+  padding: 10px 4px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.catBtn:active {
+  background: var(--color-surface-active);
+}
+
+.catActive {
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+.input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 12px;
+  font-size: 15px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.input:focus {
+  border-color: var(--color-primary);
+}
+
+.textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 12px;
+  font-size: 15px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  outline: none;
+  box-sizing: border-box;
+  resize: vertical;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+.textarea:focus {
+  border-color: var(--color-primary);
+}
+
+.error {
+  background: #ffebee;
+  color: #c62828;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.saveBtn {
+  width: 100%;
+  padding: 15px;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.saveBtn:disabled {
+  opacity: 0.6;
+}
+
+.saveBtn:active:not(:disabled) {
+  opacity: 0.85;
+}
+
+.cancelBtn {
+  width: 100%;
+  padding: 15px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  border: 1.5px solid var(--color-border);
+  border-radius: 14px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.cancelBtn:active {
+  background: var(--color-surface-active);
+}
