@@ -35,7 +35,7 @@ jobs:
         uses: yc-actions/yc-obj-storage-upload@v2
         with:
           yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
-          bucket: ${{ vars.S3_BUCKET }}
+          bucket: max.linni.org
           root: ./dist
           include: '**'
           cache-control: |
