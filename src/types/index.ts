@@ -38,6 +38,21 @@ export interface SharedCarData {
   records: ServiceRecord[];
 }
 
+export interface MakeResult {
+  id: string;
+  name: string;
+  cyrillic_name: string;
+  country?: string;
+}
+
+export interface ModelResult {
+  id: string;
+  name: string;
+  cyrillic_name: string;
+  year_from?: number;
+  year_to?: number;
+}
+
 export const CATEGORY_LABELS: Record<Category, string> = {
   maintenance: 'ТО',
   repair: 'Ремонт',

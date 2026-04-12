@@ -41,7 +41,6 @@ export function Garage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <h1 className={styles.title}>Мой гараж</h1>
-        <div className={styles.greeting}>Привет, {name}!</div>
       </div>
 
       {error && <div className={styles.error}>{error}</div>}

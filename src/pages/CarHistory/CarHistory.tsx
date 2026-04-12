@@ -70,6 +70,7 @@ export function CarHistory() {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
+        <button className={styles.backLink} onClick={() => navigate('/')}>← Гараж</button>
         <div className={styles.carName}>{carLabel(car)}</div>
         <div className={styles.mileage}>{formatMileage(car.mileage)}</div>
         <div className={styles.headerActions}>

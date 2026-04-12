@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../../api/client';
-import { Car } from '../../types';
+import { Car, MakeResult, ModelResult } from '../../types';
 import { Autocomplete } from '../../components/Autocomplete/Autocomplete';
 import { useWebApp, hapticSuccess, hapticError } from '../../hooks/useWebApp';
-import { ALL_MAKES, getModels } from '../../utils/carData';
 import { currentYear } from '../../utils/formatters';
 import styles from './AddCar.module.css';
 
@@ -29,6 +28,9 @@ export function AddCar() {
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [makeSuggestions, setMakeSuggestions] = useState<MakeResult[]>([]);
+  const [modelSuggestions, setModelSuggestions] = useState<string[]>([]);
 
   useEffect(() => {
     webApp.BackButton.show();
@@ -60,6 +62,33 @@ export function AddCar() {
     }
     return () => webApp.disableClosingConfirmation();
   }, [dirty]);
+
+  // Поиск марок: дебаунс 300 мс, минимум 2 символа
+  useEffect(() => {
+    if (form.make.length < 2) {
+      setMakeSuggestions([]);
+      return;
+    }
+    const timer = setTimeout(() => {
+      api.searchMakes(form.make).then(setMakeSuggestions).catch(() => setMakeSuggestions([]));
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [form.make]);
+
+  // Загрузка моделей при точном совпадении введённой марки с одним из результатов
+  useEffect(() => {
+    const match = makeSuggestions.find(
+      (m) => m.name.toLowerCase() === form.make.toLowerCase() ||
+             m.cyrillic_name.toLowerCase() === form.make.toLowerCase(),
+    );
+    if (match) {
+      api.getModels(match.id)
+        .then((models: ModelResult[]) => setModelSuggestions(models.map((m) => m.name)))
+        .catch(() => setModelSuggestions([]));
+    } else {
+      setModelSuggestions([]);
+    }
+  }, [form.make, makeSuggestions]);
 
   const set = (key: keyof FormData, val: string) => {
     setForm((f) => ({ ...f, [key]: val }));
@@ -112,7 +141,6 @@ export function AddCar() {
     }
   };
 
-  const models = form.make ? getModels(form.make) : [];
   const years = Array.from({ length: currentYear() - 1989 }, (_, i) => String(currentYear() - i));
 
   return (
@@ -127,7 +155,7 @@ export function AddCar() {
           required
           value={form.make}
           onChange={(v) => { setForm((f) => ({ ...f, make: v, model: '' })); setDirty(true); }}
-          suggestions={ALL_MAKES}
+          suggestions={makeSuggestions.map((m) => m.name)}
           placeholder="Toyota, BMW, Lada..."
         />
 
@@ -136,7 +164,7 @@ export function AddCar() {
           required
           value={form.model}
           onChange={(v) => set('model', v)}
-          suggestions={models}
+          suggestions={modelSuggestions}
           placeholder={form.make ? 'Выберите модель' : 'Сначала выберите марку'}
         />
 

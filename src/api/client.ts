@@ -1,4 +1,4 @@
-import { Car, ServiceRecord, ShareTokenResponse, SharedCarData } from '../types';
+import { Car, ServiceRecord, ShareTokenResponse, SharedCarData, MakeResult, ModelResult } from '../types';
 import { useWebApp } from '../hooks/useWebApp';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? '';
@@ -73,6 +73,13 @@ export const api = {
 
   deleteRecord: (carId: string, recordId: string) =>
     request<void>(`/api/cars/${carId}/records/${recordId}`, { method: 'DELETE' }),
+
+  // Catalog (public, no auth required)
+  searchMakes: (q: string) =>
+    request<MakeResult[]>(`/api/catalog/makes?q=${encodeURIComponent(q)}`),
+
+  getModels: (makeId: string) =>
+    request<ModelResult[]>(`/api/catalog/makes/${encodeURIComponent(makeId)}/models`),
 
   // Share (public, no auth)
   getShared: (token: string) =>

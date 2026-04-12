@@ -29,6 +29,19 @@
   margin-bottom: 16px;
 }
 
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--color-primary);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  margin-bottom: 10px;
+}
+
 .carName {
   font-size: 22px;
   font-weight: 700;
