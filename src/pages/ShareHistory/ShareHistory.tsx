@@ -4,7 +4,6 @@ import QRCode from 'qrcode';
 import { api } from '../../api/client';
 import { Car, ServiceRecord, SharedCarData } from '../../types';
 import { RecordCard } from '../../components/RecordCard/RecordCard';
-import { CategoryBadge } from '../../components/CategoryBadge/CategoryBadge';
 import { useWebApp, hapticSuccess } from '../../hooks/useWebApp';
 import { formatMileage, formatDate, carLabel, totalCost } from '../../utils/formatters';
 import styles from './ShareHistory.module.css';
@@ -133,7 +132,6 @@ export function SharedView() {
           records.map((r) => (
             <div key={r.id} className={styles.sharedRecord}>
               <div className={styles.srHeader}>
-                <CategoryBadge category={r.category} size="sm" />
                 <span className={styles.srDate}>{formatDate(r.date)}</span>
               </div>
               <div className={styles.srTitle}>{r.title}</div>

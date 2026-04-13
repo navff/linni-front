@@ -1,0 +1,102 @@
+.card {
+  background: var(--color-surface);
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  cursor: pointer;
+  border-left: 4px solid var(--color-border);
+  transition: background 0.15s;
+}
+
+.card:active {
+  background: var(--color-surface-active);
+}
+
+.card.ok    { border-left-color: #4CAF50; }
+.card.soon  { border-left-color: #FF9800; }
+.card.overdue { border-left-color: #f44336; }
+.card.unknown { border-left-color: var(--color-border); }
+
+.top {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.icon {
+  font-size: 18px;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.deleteBtn {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.deleteBtn:active {
+  background: var(--color-surface-active);
+}
+
+.labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+
+.labelGreen { background: #e8f5e9; color: #2e7d32; }
+.labelYellow { background: #fff3e0; color: #e65100; }
+.labelRed   { background: #ffebee; color: #c62828; }
+.labelGray  { font-size: 12px; color: var(--color-text-secondary); padding: 3px 0; }
+
+.footer {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.executeBtn {
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.executeBtn:active {
+  opacity: 0.8;
+}

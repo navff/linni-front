@@ -1,15 +1,13 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { api } from '../../api/client';
-import { Category, ServiceRecord, TITLE_SUGGESTIONS } from '../../types';
+import { MaintenancePlan, ServiceRecord, TITLE_SUGGESTIONS } from '../../types';
 import { Autocomplete } from '../../components/Autocomplete/Autocomplete';
-import { CategoryBadge } from '../../components/CategoryBadge/CategoryBadge';
 import { useWebApp, hapticSuccess, hapticError } from '../../hooks/useWebApp';
 import { todayISO } from '../../utils/formatters';
 import styles from './AddRecord.module.css';
 
 interface FormData {
-  category: Category;
   title: string;
   date: string;
   mileage: string;
@@ -19,7 +17,6 @@ interface FormData {
 }
 
 const EMPTY: FormData = {
-  category: 'maintenance',
   title: '',
   date: todayISO(),
   mileage: '',
@@ -32,6 +29,8 @@ export function AddRecord() {
   const { carId, recordId } = useParams<{ carId: string; recordId: string }>();
   const navigate = useNavigate();
   const webApp = useWebApp();
+  const [searchParams] = useSearchParams();
+  const prefillPlanId = searchParams.get('planId');
   const isEdit = !!recordId && recordId !== 'new';
 
   const [form, setForm] = useState<FormData>(EMPTY);
@@ -39,6 +38,9 @@ export function AddRecord() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [prevMileage, setPrevMileage] = useState<number>(0);
+
+  const [plans, setPlans] = useState<MaintenancePlan[]>([]);
+  const [linkedPlanId, setLinkedPlanId] = useState<string>('');
 
   useEffect(() => {
     webApp.BackButton.show();
@@ -58,19 +60,34 @@ export function AddRecord() {
 
   useEffect(() => {
     if (!carId) return;
-    // Load existing records to get previous mileage
     api.getRecords(carId).then((records) => {
       if (records.length > 0) {
         setPrevMileage(records[0].mileage);
       }
     });
 
+    if (!isEdit) {
+      api.getMaintenancePlans(carId).then((loadedPlans) => {
+        setPlans(loadedPlans);
+        if (prefillPlanId) {
+          const plan = loadedPlans.find((p) => p.id === prefillPlanId);
+          if (plan) {
+            setForm((f) => ({
+              ...f,
+              title: plan.title,
+              notes: plan.notes ?? '',
+            }));
+            setLinkedPlanId(plan.id);
+          }
+        }
+      }).catch(() => {});
+    }
+
     if (isEdit && recordId) {
       api.getRecords(carId).then((records) => {
         const rec = records.find((r) => r.id === recordId);
         if (rec) {
           setForm({
-            category: rec.category,
             title: rec.title,
             date: rec.date,
             mileage: String(rec.mileage),
@@ -85,11 +102,6 @@ export function AddRecord() {
 
   const set = (key: keyof FormData, val: string) => {
     setForm((f) => ({ ...f, [key]: val }));
-    setDirty(true);
-  };
-
-  const setCategory = (cat: Category) => {
-    setForm((f) => ({ ...f, category: cat, title: '' }));
     setDirty(true);
   };
 
@@ -115,7 +127,6 @@ export function AddRecord() {
     setError(null);
     try {
       const payload: Omit<ServiceRecord, 'id' | 'carId' | 'createdAt' | 'attachments'> = {
-        category: form.category,
         title: form.title.trim(),
         date: form.date,
         mileage: Number(form.mileage),
@@ -127,6 +138,14 @@ export function AddRecord() {
         await api.updateRecord(carId!, recordId, payload);
       } else {
         await api.createRecord(carId!, payload);
+        if (linkedPlanId) {
+          await api.markMaintenancePlanDone(
+            carId!,
+            linkedPlanId,
+            Number(form.mileage),
+            form.date,
+          ).catch(() => {});
+        }
       }
       hapticSuccess();
       webApp.disableClosingConfirmation();
@@ -139,8 +158,6 @@ export function AddRecord() {
     }
   };
 
-  const categories: Category[] = ['maintenance', 'repair', 'consumable'];
-
   return (
     <div className={styles.page}>
       <h1 className={styles.title}>{isEdit ? 'Редактировать запись' : 'Новая запись'}</h1>
@@ -148,28 +165,12 @@ export function AddRecord() {
       {error && <div className={styles.error}>{error}</div>}
 
       <div className={styles.form}>
-        <div className={styles.field}>
-          <label className={styles.label}>Категория *</label>
-          <div className={styles.categoryRow}>
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                className={`${styles.catBtn} ${form.category === cat ? styles.catActive : ''}`}
-                onClick={() => setCategory(cat)}
-                style={form.category === cat ? { borderColor: 'var(--color-primary)', background: 'var(--color-primary)11' } : {}}
-              >
-                <CategoryBadge category={cat} />
-              </button>
-            ))}
-          </div>
-        </div>
-
         <Autocomplete
           label="Наименование"
           required
           value={form.title}
           onChange={(v) => set('title', v)}
-          suggestions={TITLE_SUGGESTIONS[form.category]}
+          suggestions={TITLE_SUGGESTIONS}
           placeholder="Замена масла..."
         />
 
@@ -234,6 +235,27 @@ export function AddRecord() {
             rows={3}
           />
         </div>
+
+        {!isEdit && plans.length > 0 && (
+          <div className={styles.field}>
+            <label className={styles.label}>Выполнение регламента</label>
+            <select
+              className={styles.input}
+              value={linkedPlanId}
+              onChange={(e) => setLinkedPlanId(e.target.value)}
+            >
+              <option value="">— не связывать —</option>
+              {plans.map((p) => (
+                <option key={p.id} value={p.id}>{p.title}</option>
+              ))}
+            </select>
+            {linkedPlanId && (
+              <div className={styles.hintInline} style={{ marginTop: 4 }}>
+                После сохранения регламент «{plans.find(p => p.id === linkedPlanId)?.title}» обновится автоматически
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className={styles.actions}>

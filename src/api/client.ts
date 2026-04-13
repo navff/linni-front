@@ -1,4 +1,4 @@
-import { Car, ServiceRecord, ShareTokenResponse, SharedCarData, MakeResult, ModelResult } from '../types';
+import { Car, MaintenancePlan, ServiceRecord, ShareTokenResponse, SharedCarData, MakeResult, ModelResult } from '../types';
 import { useWebApp } from '../hooks/useWebApp';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? '';
@@ -47,10 +47,8 @@ export const api = {
     request<ShareTokenResponse>(`/api/cars/${id}/share`, { method: 'POST' }),
 
   // Records
-  getRecords: (carId: string, category?: string) => {
-    const params = category ? `?category=${category}` : '';
-    return request<ServiceRecord[]>(`/api/cars/${carId}/records${params}`);
-  },
+  getRecords: (carId: string) =>
+    request<ServiceRecord[]>(`/api/cars/${carId}/records`),
 
   createRecord: (
     carId: string,
@@ -73,6 +71,50 @@ export const api = {
 
   deleteRecord: (carId: string, recordId: string) =>
     request<void>(`/api/cars/${carId}/records/${recordId}`, { method: 'DELETE' }),
+
+  // Car mileage quick update
+  updateMileage: (carId: string, mileage: number) =>
+    request<Car>(`/api/cars/${carId}/mileage`, {
+      method: 'PATCH',
+      body: JSON.stringify({ mileage }),
+    }),
+
+  // Maintenance plans
+  getMaintenancePlans: (carId: string) =>
+    request<MaintenancePlan[]>(`/api/cars/${carId}/maintenance`),
+
+  createMaintenancePlan: (
+    carId: string,
+    data: Omit<MaintenancePlan, 'id' | 'carId' | 'createdAt'>,
+  ) =>
+    request<MaintenancePlan>(`/api/cars/${carId}/maintenance`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateMaintenancePlan: (
+    carId: string,
+    planId: string,
+    data: Omit<MaintenancePlan, 'id' | 'carId' | 'createdAt'>,
+  ) =>
+    request<MaintenancePlan>(`/api/cars/${carId}/maintenance/${planId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  markMaintenancePlanDone: (
+    carId: string,
+    planId: string,
+    mileage: number | undefined,
+    doneDate: string | undefined,
+  ) =>
+    request<MaintenancePlan>(`/api/cars/${carId}/maintenance/${planId}/done`, {
+      method: 'PATCH',
+      body: JSON.stringify({ mileage, done_date: doneDate }),
+    }),
+
+  deleteMaintenancePlan: (carId: string, planId: string) =>
+    request<void>(`/api/cars/${carId}/maintenance/${planId}`, { method: 'DELETE' }),
 
   // Catalog (public, no auth required)
   searchMakes: (q: string) =>

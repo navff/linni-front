@@ -29,6 +29,51 @@ export function carLabel(car: { make: string; model: string; year: number; nickn
   return car.nickname ? `${car.nickname} (${base})` : base;
 }
 
+export function calcPlanStatus(
+  plan: { intervalKm?: number; intervalMonths?: number; lastMileage?: number; lastDate?: string },
+  carMileage: number,
+): { status: 'ok' | 'soon' | 'overdue' | 'unknown'; kmLabel?: string; dateLabel?: string } {
+  let status: 'ok' | 'soon' | 'overdue' | 'unknown' = 'unknown';
+  let kmLabel: string | undefined;
+  let dateLabel: string | undefined;
+
+  if (plan.intervalKm && plan.lastMileage != null) {
+    const nextKm = plan.lastMileage + plan.intervalKm;
+    const remaining = nextKm - carMileage;
+    kmLabel = remaining < 0
+      ? `просрочено на ${formatMileage(Math.abs(remaining))}`
+      : `через ${formatMileage(remaining)} (при ${nextKm.toLocaleString('ru-RU')} км)`;
+    if (remaining < 0) status = 'overdue';
+    else if (remaining < plan.intervalKm * 0.2) status = 'soon';
+    else status = 'ok';
+  } else if (plan.intervalKm) {
+    kmLabel = `при ${plan.intervalKm.toLocaleString('ru-RU')} км от последнего`;
+  }
+
+  if (plan.intervalMonths && plan.lastDate) {
+    const last = new Date(plan.lastDate);
+    const next = new Date(last);
+    next.setMonth(next.getMonth() + plan.intervalMonths);
+    const today = new Date();
+    const diffDays = Math.round((next.getTime() - today.getTime()) / 86_400_000);
+    if (diffDays < 0) {
+      dateLabel = `просрочено на ${Math.abs(diffDays)} дн.`;
+      if (status !== 'overdue') status = 'overdue';
+    } else if (diffDays < 30) {
+      dateLabel = `через ${diffDays} дн.`;
+      if (status === 'ok' || status === 'unknown') status = 'soon';
+    } else {
+      const months = Math.round(diffDays / 30);
+      dateLabel = `через ${months} мес.`;
+      if (status === 'unknown') status = 'ok';
+    }
+  } else if (plan.intervalMonths) {
+    dateLabel = `каждые ${plan.intervalMonths} мес.`;
+  }
+
+  return { status, kmLabel, dateLabel };
+}
+
 export function totalCost(records: { cost?: number }[]): number {
   return records.reduce((sum, r) => sum + (r.cost ?? 0), 0);
 }

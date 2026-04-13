@@ -12,12 +12,9 @@ export interface Car {
   updatedAt: string;
 }
 
-export type Category = 'maintenance' | 'repair' | 'consumable';
-
 export interface ServiceRecord {
   id: string;
   carId: string;
-  category: Category;
   title: string;
   date: string;
   mileage: number;
@@ -38,6 +35,26 @@ export interface SharedCarData {
   records: ServiceRecord[];
 }
 
+export interface MaintenancePlan {
+  id: string;
+  carId: string;
+  title: string;
+  intervalKm?: number;
+  intervalMonths?: number;
+  lastMileage?: number;
+  lastDate?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export type PlanStatus = 'ok' | 'soon' | 'overdue' | 'unknown';
+
+export interface PlanStatusInfo {
+  status: PlanStatus;
+  kmLabel?: string;
+  dateLabel?: string;
+}
+
 export interface MakeResult {
   id: string;
   name: string;
@@ -53,54 +70,31 @@ export interface ModelResult {
   year_to?: number;
 }
 
-export const CATEGORY_LABELS: Record<Category, string> = {
-  maintenance: 'ТО',
-  repair: 'Ремонт',
-  consumable: 'Расходники',
-};
-
-export const CATEGORY_COLORS: Record<Category, string> = {
-  maintenance: '#2196F3',
-  repair: '#FF9800',
-  consumable: '#4CAF50',
-};
-
-export const TITLE_SUGGESTIONS: Record<Category, string[]> = {
-  maintenance: [
-    'ТО: масло, фильтры',
-    'Масло в двигателе',
-    'Шины: монтаж и замена',
-    'Тормозные колодки: передние/задние',
-    'Фильтры: масляный, топливный, воздушный',
-    'Свечи зажигания',
-    'Кузов: антикоррозийная обработка',
-    'Салон: химчистка',
-    'ЛКП: промывка и защита (керамика, нанопокрытия)',
-    'Компьютерная диагностика',
-    'Кондиционер: проверка и заправка',
-    'Аккумулятор: замена и проверка',
-    'Ходовая: диагностика и ремонт',
-    'Стойки стабилизатора',
-    'Тормозные диски',
-    'ГРМ: ремонт и замена (цепь/ремень)',
-    'Щётки стеклоочистителей',
-    'Радиатор и система охлаждения: промывка',
-    'АКПП: замена масла',
-  ],
-  repair: [
-    'Кузовной ремонт',
-    'Диагностика ходовой части',
-    'Замена аккумулятора',
-    'Замена ремня / цепи ГРМ',
-    'Компьютерная диагностика',
-  ],
-  consumable: [
-    'Замена масла и масляного фильтра',
-    'Замена воздушного фильтра',
-    'Замена тормозных колодок (передние)',
-    'Замена тормозных колодок (задние)',
-    'Замена антифриза',
-    'Замена тормозной жидкости',
-    'Замена аккумулятора',
-  ],
-};
+export const TITLE_SUGGESTIONS: string[] = [
+  'ТО: масло, фильтры',
+  'Масло в двигателе',
+  'Шины: монтаж и замена',
+  'Тормозные колодки: передние/задние',
+  'Фильтры: масляный, топливный, воздушный',
+  'Свечи зажигания',
+  'Замена масла и масляного фильтра',
+  'Замена воздушного фильтра',
+  'Замена тормозных колодок (передние)',
+  'Замена тормозных колодок (задние)',
+  'Замена антифриза',
+  'Замена тормозной жидкости',
+  'Замена аккумулятора',
+  'Кузов: антикоррозийная обработка',
+  'Салон: химчистка',
+  'ЛКП: промывка и защита (керамика, нанопокрытия)',
+  'Компьютерная диагностика',
+  'Кондиционер: проверка и заправка',
+  'Ходовая: диагностика и ремонт',
+  'Стойки стабилизатора',
+  'Тормозные диски',
+  'ГРМ: ремонт и замена (цепь/ремень)',
+  'Щётки стеклоочистителей',
+  'Радиатор и система охлаждения: промывка',
+  'АКПП: замена масла',
+  'Кузовной ремонт',
+];

@@ -5,6 +5,7 @@ import { AddCar } from './pages/AddCar/AddCar';
 import { CarHistory } from './pages/CarHistory/CarHistory';
 import { AddRecord } from './pages/AddRecord/AddRecord';
 import { ShareHistory, SharedView } from './pages/ShareHistory/ShareHistory';
+import { AddMaintenancePlan } from './pages/AddMaintenancePlan/AddMaintenancePlan';
 import { useWebApp } from './hooks/useWebApp';
 
 export function App() {
@@ -31,6 +32,8 @@ export function App() {
       <Route path="/cars/:id/share" element={<ShareHistory />} />
       <Route path="/cars/:carId/records/new" element={<AddRecord />} />
       <Route path="/cars/:carId/records/:recordId" element={<AddRecord />} />
+      <Route path="/cars/:carId/maintenance/new" element={<AddMaintenancePlan />} />
+      <Route path="/cars/:carId/maintenance/:planId" element={<AddMaintenancePlan />} />
       <Route path="/share/:token" element={<SharedView />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
