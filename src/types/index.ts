@@ -1,9 +1,19 @@
+export type EngineType = 'petrol' | 'diesel' | 'hybrid' | 'electric';
+
+export const ENGINE_TYPE_LABELS: Record<EngineType, string> = {
+  petrol: 'Бензин',
+  diesel: 'Дизель',
+  hybrid: 'Гибрид',
+  electric: 'Электро',
+};
+
 export interface Car {
   id: string;
   userId: number;
   make: string;
   model: string;
   year: number;
+  engineType?: EngineType;
   vin?: string;
   mileage: number;
   nickname?: string;
@@ -39,10 +49,9 @@ export interface MaintenancePlan {
   id: string;
   carId: string;
   title: string;
-  intervalKm?: number;
-  intervalMonths?: number;
-  lastMileage?: number;
-  lastDate?: string;
+  targetKm?: number;
+  targetDate?: string;
+  summary?: string;
   notes?: string;
   createdAt: string;
 }

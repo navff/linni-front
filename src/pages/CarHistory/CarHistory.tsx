@@ -6,8 +6,16 @@ import { RecordCard } from '../../components/RecordCard/RecordCard';
 import { MaintenancePlanCard } from '../../components/MaintenancePlanCard/MaintenancePlanCard';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
 import { FloatButton } from '../../components/FloatButton/FloatButton';
-import { useWebApp, hapticImpact } from '../../hooks/useWebApp';
+import { useWebApp, hapticImpact, hapticSuccess, hapticError } from '../../hooks/useWebApp';
 import { formatMileage, formatCost, totalCost, yearCost, carLabel } from '../../utils/formatters';
+import {
+  getState,
+  subscribe,
+  clearSuggestions,
+  fetchSuggestions,
+  SuggestionState,
+} from '../../services/serviceSuggestions';
+import { todayISO } from '../../utils/formatters';
 import styles from './CarHistory.module.css';
 
 type Tab = 'history' | 'plan';
@@ -23,6 +31,14 @@ export function CarHistory() {
   const [tab, setTab] = useState<Tab>('plan');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Service suggestions state
+  const [suggestionState, setSuggestionState] = useState<SuggestionState>({ status: 'idle' });
+  const [applyingPlans, setApplyingPlans] = useState(false);
+
+  // Dialog: запрос даты последнего сервиса перед получением рекомендаций
+  const [showDateDialog, setShowDateDialog] = useState(false);
+  const [dialogDate, setDialogDate] = useState('');
 
   // Mileage update dialog
   const [showMileageDialog, setShowMileageDialog] = useState(false);
@@ -45,6 +61,74 @@ export function CarHistory() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  // Subscribe to background suggestion updates
+  useEffect(() => {
+    if (!id) return;
+    // Read current state immediately (may already be done/loading)
+    setSuggestionState(getState(id));
+    // Subscribe for future updates
+    const unsubscribe = subscribe(id, (state) => setSuggestionState(state));
+    return unsubscribe;
+  }, [id]);
+
+  const handleApplySuggestions = async (
+    suggestions: SuggestionState['suggestions'],
+    lastServiceDate: string | undefined,
+  ) => {
+    if (!id || !suggestions?.length) return;
+    setApplyingPlans(true);
+    try {
+      const created: MaintenancePlan[] = [];
+      for (const s of suggestions) {
+        // Парсим целевой пробег из названия вида "Плановое ТО (74000 км)"
+        const kmMatch = s.name.match(/\((\d[\d\s]*)\s*км\)/i);
+        const targetKm = kmMatch ? parseInt(kmMatch[1].replace(/\s/g, ''), 10) : undefined;
+        const plan = await api.createMaintenancePlan(id, {
+          title: s.name,
+          targetKm,
+          targetDate: s.date || undefined,
+          summary: s.summary || undefined,
+          notes: s.services.length ? s.services.join('\n') : undefined,
+        } as Omit<MaintenancePlan, 'id' | 'carId' | 'createdAt'>);
+        created.push(plan);
+      }
+      clearSuggestions(id);
+      setSuggestionState({ status: 'idle' });
+      setPlans((prev) => [...prev, ...created]);
+      hapticSuccess();
+    } catch (e: any) {
+      hapticError();
+      setError(e.message);
+    } finally {
+      setApplyingPlans(false);
+    }
+  };
+
+  // Автоматически применяем рекомендации, как только они пришли и регламент пуст
+  useEffect(() => {
+    if (
+      suggestionState.status === 'done' &&
+      plans.length === 0 &&
+      !applyingPlans &&
+      suggestionState.suggestions?.length
+    ) {
+      handleApplySuggestions(suggestionState.suggestions, suggestionState.lastServiceDate);
+    }
+  }, [suggestionState.status]);
+
+  // Клик по кнопке «Заполнить по рекомендациям» — только в idle/error, открывает диалог даты
+  const handleSuggestClick = () => {
+    if (suggestionState.status === 'loading' || applyingPlans) return;
+    setDialogDate('');
+    setShowDateDialog(true);
+  };
+
+  const handleDateDialogSubmit = () => {
+    if (!id || !car) return;
+    setShowDateDialog(false);
+    fetchSuggestions(id, car.make, car.model, String(car.year), dialogDate || todayISO(), car.mileage, car.engineType);
+  };
+
   const handleDelete = async (record: ServiceRecord) => {
     hapticImpact('medium');
     if (!confirm(`Удалить запись «${record.title}»?`)) return;
@@ -54,7 +138,7 @@ export function CarHistory() {
 
   const handleDeletePlan = async (plan: MaintenancePlan) => {
     hapticImpact('medium');
-    if (!confirm(`Удалить регламент «${plan.title}»?`)) return;
+    if (!confirm(`Удалить пункт плана «${plan.title}»?`)) return;
     await api.deleteMaintenancePlan(id!, plan.id);
     setPlans((prev) => prev.filter((p) => p.id !== plan.id));
   };
@@ -91,14 +175,12 @@ export function CarHistory() {
   const thisYear = yearCost(records);
 
   const overdueCount = plans.filter((p) => {
-    if (p.intervalKm && p.lastMileage != null && (p.lastMileage + p.intervalKm) < car.mileage) return true;
-    if (p.intervalMonths && p.lastDate) {
-      const next = new Date(p.lastDate);
-      next.setMonth(next.getMonth() + p.intervalMonths);
-      if (next < new Date()) return true;
-    }
+    if (p.targetKm != null && p.targetKm <= car.mileage) return true;
+    if (p.targetDate && new Date(p.targetDate) < new Date()) return true;
     return false;
   }).length;
+
+  const planIsEmpty = plans.length === 0;
 
   return (
     <div className={styles.page}>
@@ -135,7 +217,7 @@ export function CarHistory() {
           className={`${styles.tabBtn} ${tab === 'plan' ? styles.tabActive : ''}`}
           onClick={() => setTab('plan')}
         >
-          Регламент{overdueCount > 0 && <span className={styles.badge}>{overdueCount}</span>}
+          План{overdueCount > 0 && <span className={styles.badge}>{overdueCount}</span>}
         </button>
         <button
           className={`${styles.tabBtn} ${tab === 'history' ? styles.tabActive : ''}`}
@@ -176,11 +258,20 @@ export function CarHistory() {
       {/* Plan tab */}
       {tab === 'plan' && (
         <>
-          {plans.length === 0 ? (
+          {error && <div className={styles.error}>{error}</div>}
+
+          {/* Ошибка получения рекомендаций */}
+          {planIsEmpty && suggestionState.status === 'error' && (
+            <div className={styles.suggestionBannerError}>
+              Не удалось получить рекомендации: {suggestionState.error}
+            </div>
+          )}
+
+          {planIsEmpty ? (
             <EmptyState
               emoji="📅"
-              title="Регламент не настроен"
-              description="Добавьте периодические работы — масло, жидкости, фильтры"
+              title="План не настроен"
+              description="Добавьте предстоящие работы — масло, жидкости, фильтры"
             />
           ) : (
             <div className={styles.list}>
@@ -197,8 +288,51 @@ export function CarHistory() {
             </div>
           )}
 
+          {/* Кнопка «Заполнить по рекомендациям» — видна при пустом регламенте */}
+          {planIsEmpty && (
+            <button
+              className={styles.applyBtn}
+              onClick={handleSuggestClick}
+              disabled={applyingPlans || suggestionState.status === 'loading'}
+            >
+              {applyingPlans
+                ? 'Создаём регламент…'
+                : suggestionState.status === 'loading'
+                  ? 'Подбираем рекомендации…'
+                  : 'Заполнить по рекомендациям'}
+            </button>
+          )}
+
           <FloatButton onClick={() => navigate(`/cars/${id}/maintenance/new`)} />
         </>
+      )}
+
+      {/* Last service date dialog */}
+      {showDateDialog && (
+        <div className={styles.dialogOverlay} onClick={() => setShowDateDialog(false)}>
+          <div className={styles.dialog} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.dialogTitle}>Рекомендации по ТО</div>
+            <div className={styles.dialogSubtitle}>
+              Когда последний раз были в сервисе (примерно)?
+            </div>
+            <input
+              className={styles.dialogInput}
+              type="date"
+              value={dialogDate}
+              max={todayISO()}
+              onChange={(e) => setDialogDate(e.target.value)}
+              autoFocus
+            />
+            <div className={styles.dialogActions}>
+              <button className={styles.dialogSave} onClick={handleDateDialogSubmit}>
+                Получить рекомендации
+              </button>
+              <button className={styles.dialogCancel} onClick={() => setShowDateDialog(false)}>
+                Отмена
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Mileage update dialog */}

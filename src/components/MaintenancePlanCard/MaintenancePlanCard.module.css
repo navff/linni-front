@@ -12,7 +12,7 @@
   background: var(--color-surface-active);
 }
 
-.card.ok    { border-left-color: #4CAF50; }
+.card.ok    { border-left-color: var(--color-border); opacity: 0.75; }
 .card.soon  { border-left-color: #FF9800; }
 .card.overdue { border-left-color: #f44336; }
 .card.unknown { border-left-color: var(--color-border); }
@@ -44,6 +44,13 @@
   margin-bottom: 4px;
 }
 
+.summary {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
 .deleteBtn {
   background: none;
   border: none;
@@ -60,41 +67,46 @@
   background: var(--color-surface-active);
 }
 
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+}
+
 .labels {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 10px;
+  flex: 1;
 }
 
 .label {
   font-size: 12px;
   font-weight: 500;
-  padding: 3px 8px;
+  padding: 5px 10px;
   border-radius: 20px;
+  line-height: 1;
 }
 
 .labelGreen { background: #e8f5e9; color: #2e7d32; }
 .labelYellow { background: #fff3e0; color: #e65100; }
 .labelRed   { background: #ffebee; color: #c62828; }
-.labelGray  { font-size: 12px; color: var(--color-text-secondary); padding: 3px 0; }
-
-.footer {
-  margin-top: 12px;
-  display: flex;
-  justify-content: flex-end;
-}
+.labelGray  { font-size: 12px; color: var(--color-text-secondary); }
 
 .executeBtn {
+  flex-shrink: 0;
   background: var(--color-primary);
   color: #fff;
   border: none;
-  border-radius: 8px;
-  padding: 6px 16px;
-  font-size: 13px;
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.15s;
+  line-height: 1;
 }
 
 .executeBtn:active {

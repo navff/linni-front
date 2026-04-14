@@ -29,47 +29,56 @@ export function carLabel(car: { make: string; model: string; year: number; nickn
   return car.nickname ? `${car.nickname} (${base})` : base;
 }
 
+const SOON_KM = 1000;  // км до события — «скоро»
+const SOON_DAYS = 30;  // дней до события — «скоро»
+
 export function calcPlanStatus(
-  plan: { intervalKm?: number; intervalMonths?: number; lastMileage?: number; lastDate?: string },
+  plan: { targetKm?: number; targetDate?: string },
   carMileage: number,
 ): { status: 'ok' | 'soon' | 'overdue' | 'unknown'; kmLabel?: string; dateLabel?: string } {
-  let status: 'ok' | 'soon' | 'overdue' | 'unknown' = 'unknown';
+  let kmStatus: 'ok' | 'soon' | 'overdue' | null = null;
+  let dateStatus: 'ok' | 'soon' | 'overdue' | null = null;
   let kmLabel: string | undefined;
   let dateLabel: string | undefined;
 
-  if (plan.intervalKm && plan.lastMileage != null) {
-    const nextKm = plan.lastMileage + plan.intervalKm;
-    const remaining = nextKm - carMileage;
-    kmLabel = remaining < 0
-      ? `просрочено на ${formatMileage(Math.abs(remaining))}`
-      : `через ${formatMileage(remaining)} (при ${nextKm.toLocaleString('ru-RU')} км)`;
-    if (remaining < 0) status = 'overdue';
-    else if (remaining < plan.intervalKm * 0.2) status = 'soon';
-    else status = 'ok';
-  } else if (plan.intervalKm) {
-    kmLabel = `при ${plan.intervalKm.toLocaleString('ru-RU')} км от последнего`;
+  if (plan.targetKm != null) {
+    const remaining = plan.targetKm - carMileage;
+    if (remaining <= 0) {
+      kmLabel = `просрочено на ${formatMileage(Math.abs(remaining))}`;
+      kmStatus = 'overdue';
+    } else if (remaining <= SOON_KM) {
+      kmLabel = `осталось ${formatMileage(remaining)} (при ${plan.targetKm.toLocaleString('ru-RU')} км)`;
+      kmStatus = 'soon';
+    } else {
+      kmLabel = `при ${plan.targetKm.toLocaleString('ru-RU')} км (осталось ${formatMileage(remaining)})`;
+      kmStatus = 'ok';
+    }
   }
 
-  if (plan.intervalMonths && plan.lastDate) {
-    const last = new Date(plan.lastDate);
-    const next = new Date(last);
-    next.setMonth(next.getMonth() + plan.intervalMonths);
+  if (plan.targetDate) {
+    const target = new Date(plan.targetDate);
     const today = new Date();
-    const diffDays = Math.round((next.getTime() - today.getTime()) / 86_400_000);
+    today.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((target.getTime() - today.getTime()) / 86_400_000);
     if (diffDays < 0) {
       dateLabel = `просрочено на ${Math.abs(diffDays)} дн.`;
-      if (status !== 'overdue') status = 'overdue';
-    } else if (diffDays < 30) {
-      dateLabel = `через ${diffDays} дн.`;
-      if (status === 'ok' || status === 'unknown') status = 'soon';
+      dateStatus = 'overdue';
+    } else if (diffDays <= SOON_DAYS) {
+      dateLabel = `через ${diffDays} дн. (${formatDateShort(plan.targetDate)})`;
+      dateStatus = 'soon';
     } else {
-      const months = Math.round(diffDays / 30);
-      dateLabel = `через ${months} мес.`;
-      if (status === 'unknown') status = 'ok';
+      dateLabel = formatDateShort(plan.targetDate);
+      dateStatus = 'ok';
     }
-  } else if (plan.intervalMonths) {
-    dateLabel = `каждые ${plan.intervalMonths} мес.`;
   }
+
+  // Итоговый статус: наихудший из двух
+  const rank = { overdue: 3, soon: 2, ok: 1, unknown: 0 } as const;
+  const combined = [kmStatus, dateStatus].filter(Boolean) as Array<'ok' | 'soon' | 'overdue'>;
+  const status: 'ok' | 'soon' | 'overdue' | 'unknown' =
+    combined.length === 0
+      ? 'unknown'
+      : combined.reduce((worst, s) => rank[s] > rank[worst] ? s : worst);
 
   return { status, kmLabel, dateLabel };
 }

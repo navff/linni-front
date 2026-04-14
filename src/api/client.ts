@@ -102,17 +102,6 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
-  markMaintenancePlanDone: (
-    carId: string,
-    planId: string,
-    mileage: number | undefined,
-    doneDate: string | undefined,
-  ) =>
-    request<MaintenancePlan>(`/api/cars/${carId}/maintenance/${planId}/done`, {
-      method: 'PATCH',
-      body: JSON.stringify({ mileage, done_date: doneDate }),
-    }),
-
   deleteMaintenancePlan: (carId: string, planId: string) =>
     request<void>(`/api/cars/${carId}/maintenance/${planId}`, { method: 'DELETE' }),
 

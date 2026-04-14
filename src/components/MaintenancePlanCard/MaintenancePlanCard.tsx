@@ -11,7 +11,7 @@ interface Props {
 }
 
 const STATUS_ICON: Record<string, string> = {
-  ok: '✅',
+  ok: '⏳',
   soon: '⚠️',
   overdue: '🔴',
   unknown: '⬜',
@@ -26,6 +26,7 @@ export function MaintenancePlanCard({ plan, carMileage, onClick, onDelete, onExe
         <span className={styles.icon}>{STATUS_ICON[status]}</span>
         <div className={styles.info}>
           <div className={styles.title}>{plan.title}</div>
+          {plan.summary && <div className={styles.summary}>{plan.summary}</div>}
         </div>
         <button
           className={styles.deleteBtn}
@@ -36,23 +37,22 @@ export function MaintenancePlanCard({ plan, carMileage, onClick, onDelete, onExe
         </button>
       </div>
 
-      <div className={styles.labels}>
-        {kmLabel && (
-          <span className={`${styles.label} ${status === 'overdue' ? styles.labelRed : status === 'soon' ? styles.labelYellow : styles.labelGreen}`}>
-            🛣 {kmLabel}
-          </span>
-        )}
-        {dateLabel && (
-          <span className={`${styles.label} ${status === 'overdue' ? styles.labelRed : status === 'soon' ? styles.labelYellow : styles.labelGreen}`}>
-            📅 {dateLabel}
-          </span>
-        )}
-        {plan.lastMileage == null && plan.lastDate == null && (
-          <span className={styles.labelGray}>Не выполнялось</span>
-        )}
-      </div>
-
       <div className={styles.footer}>
+        <div className={styles.labels}>
+          {kmLabel && (
+            <span className={`${styles.label} ${status === 'overdue' ? styles.labelRed : status === 'soon' ? styles.labelYellow : styles.labelGreen}`}>
+              🛣 {kmLabel}
+            </span>
+          )}
+          {dateLabel && (
+            <span className={`${styles.label} ${status === 'overdue' ? styles.labelRed : status === 'soon' ? styles.labelYellow : styles.labelGreen}`}>
+              📅 {dateLabel}
+            </span>
+          )}
+          {!plan.targetKm && !plan.targetDate && (
+            <span className={styles.labelGray}>Дата и пробег не указаны</span>
+          )}
+        </div>
         <button
           className={styles.executeBtn}
           onClick={(e) => { e.stopPropagation(); onExecute(); }}

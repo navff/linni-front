@@ -4,24 +4,19 @@ import { api } from '../../api/client';
 import { MaintenancePlan, TITLE_SUGGESTIONS } from '../../types';
 import { Autocomplete } from '../../components/Autocomplete/Autocomplete';
 import { useWebApp, hapticSuccess, hapticError } from '../../hooks/useWebApp';
-import { todayISO } from '../../utils/formatters';
 import styles from './AddMaintenancePlan.module.css';
 
 interface FormData {
   title: string;
-  intervalKm: string;
-  intervalMonths: string;
-  lastMileage: string;
-  lastDate: string;
+  targetKm: string;
+  targetDate: string;
   notes: string;
 }
 
 const EMPTY: FormData = {
   title: '',
-  intervalKm: '',
-  intervalMonths: '',
-  lastMileage: '',
-  lastDate: '',
+  targetKm: '',
+  targetDate: '',
   notes: '',
 };
 
@@ -32,6 +27,7 @@ export function AddMaintenancePlan() {
   const isEdit = !!planId && planId !== 'new';
 
   const [form, setForm] = useState<FormData>(EMPTY);
+  const [summary, setSummary] = useState<string | undefined>(undefined);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,12 +52,11 @@ export function AddMaintenancePlan() {
       if (plan) {
         setForm({
           title: plan.title,
-          intervalKm: plan.intervalKm != null ? String(plan.intervalKm) : '',
-          intervalMonths: plan.intervalMonths != null ? String(plan.intervalMonths) : '',
-          lastMileage: plan.lastMileage != null ? String(plan.lastMileage) : '',
-          lastDate: plan.lastDate ?? '',
+          targetKm: plan.targetKm != null ? String(plan.targetKm) : '',
+          targetDate: plan.targetDate ?? '',
           notes: plan.notes ?? '',
         });
+        setSummary(plan.summary);
       }
     });
   }, [carId, planId]);
@@ -73,9 +68,8 @@ export function AddMaintenancePlan() {
 
   const validate = (): string | null => {
     if (!form.title.trim()) return 'Укажите наименование';
-    if (!form.intervalKm && !form.intervalMonths) return 'Укажите хотя бы один интервал';
-    if (form.intervalKm && Number(form.intervalKm) <= 0) return 'Интервал по пробегу должен быть больше 0';
-    if (form.intervalMonths && Number(form.intervalMonths) <= 0) return 'Интервал по времени должен быть больше 0';
+    if (!form.targetKm && !form.targetDate) return 'Укажите хотя бы пробег или дату';
+    if (form.targetKm && Number(form.targetKm) <= 0) return 'Пробег должен быть больше 0';
     return null;
   };
 
@@ -88,10 +82,8 @@ export function AddMaintenancePlan() {
     try {
       const payload = {
         title: form.title.trim(),
-        intervalKm: form.intervalKm ? Number(form.intervalKm) : undefined,
-        intervalMonths: form.intervalMonths ? Number(form.intervalMonths) : undefined,
-        lastMileage: form.lastMileage ? Number(form.lastMileage) : undefined,
-        lastDate: form.lastDate || undefined,
+        targetKm: form.targetKm ? Number(form.targetKm) : undefined,
+        targetDate: form.targetDate || undefined,
         notes: form.notes.trim() || undefined,
       };
 
@@ -113,9 +105,13 @@ export function AddMaintenancePlan() {
 
   return (
     <div className={styles.page}>
-      <h1 className={styles.title}>{isEdit ? 'Редактировать регламент' : 'Новый регламент'}</h1>
+      <h1 className={styles.title}>{isEdit ? 'Редактировать пункт плана' : 'Новый пункт плана'}</h1>
 
       {error && <div className={styles.error}>{error}</div>}
+
+      {summary && (
+        <div className={styles.summaryBlock}>{summary}</div>
+      )}
 
       <div className={styles.form}>
         <Autocomplete
@@ -127,45 +123,18 @@ export function AddMaintenancePlan() {
           placeholder="Замена масла..."
         />
 
-        <div className={styles.sectionLabel}>Интервал (укажите хотя бы один) *</div>
+        <div className={styles.sectionLabel}>Когда выполнить (укажите хотя бы одно) *</div>
 
         <div className={styles.row2}>
           <div className={styles.field}>
-            <label className={styles.label}>По пробегу (км)</label>
+            <label className={styles.label}>При пробеге (км)</label>
             <input
               className={styles.input}
               type="number"
               min="1"
-              value={form.intervalKm}
-              onChange={(e) => set('intervalKm', e.target.value)}
-              placeholder="5000"
-            />
-          </div>
-          <div className={styles.field}>
-            <label className={styles.label}>По времени (мес.)</label>
-            <input
-              className={styles.input}
-              type="number"
-              min="1"
-              value={form.intervalMonths}
-              onChange={(e) => set('intervalMonths', e.target.value)}
-              placeholder="6"
-            />
-          </div>
-        </div>
-
-        <div className={styles.sectionLabel}>Последнее выполнение (необязательно)</div>
-
-        <div className={styles.row2}>
-          <div className={styles.field}>
-            <label className={styles.label}>Пробег (км)</label>
-            <input
-              className={styles.input}
-              type="number"
-              min="1"
-              value={form.lastMileage}
-              onChange={(e) => set('lastMileage', e.target.value)}
-              placeholder="50000"
+              value={form.targetKm}
+              onChange={(e) => set('targetKm', e.target.value)}
+              placeholder="74000"
             />
           </div>
           <div className={styles.field}>
@@ -173,9 +142,8 @@ export function AddMaintenancePlan() {
             <input
               className={styles.input}
               type="date"
-              value={form.lastDate}
-              max={todayISO()}
-              onChange={(e) => set('lastDate', e.target.value)}
+              value={form.targetDate}
+              onChange={(e) => set('targetDate', e.target.value)}
             />
           </div>
         </div>
@@ -186,8 +154,8 @@ export function AddMaintenancePlan() {
             className={styles.textarea}
             value={form.notes}
             onChange={(e) => set('notes', e.target.value)}
-            placeholder="Например: сказали в автосервисе..."
-            rows={3}
+            placeholder="Список работ, примечания..."
+            rows={15}
           />
         </div>
       </div>

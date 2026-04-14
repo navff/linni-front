@@ -116,3 +116,26 @@
 .cancelBtn:active {
   background: var(--color-surface-active);
 }
+
+.deleteBtn {
+  width: 100%;
+  padding: 15px;
+  background: transparent;
+  color: #c62828;
+  border: 1.5px solid #ef9a9a;
+  border-radius: 14px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.15s;
+}
+
+.deleteBtn:active {
+  background: #ffebee;
+}
+
+.fieldHint {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}

@@ -1,22 +1,36 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../../api/client';
-import { Car, MakeResult, ModelResult } from '../../types';
+import { Car, EngineType, ENGINE_TYPE_LABELS, MakeResult, ModelResult } from '../../types';
 import { Autocomplete } from '../../components/Autocomplete/Autocomplete';
-import { useWebApp, hapticSuccess, hapticError } from '../../hooks/useWebApp';
-import { currentYear } from '../../utils/formatters';
+import { useWebApp, hapticSuccess, hapticError, hapticImpact } from '../../hooks/useWebApp';
+import { currentYear, todayISO } from '../../utils/formatters';
+import { fetchSuggestions } from '../../services/serviceSuggestions';
 import styles from './AddCar.module.css';
 
 interface FormData {
   make: string;
   model: string;
   year: string;
+  engineType: EngineType | '';
   vin: string;
   mileage: string;
   nickname: string;
+  lastServiceDate: string;
 }
 
-const EMPTY: FormData = { make: '', model: '', year: String(currentYear()), vin: '', mileage: '', nickname: '' };
+const EMPTY: FormData = {
+  make: '',
+  model: '',
+  year: String(currentYear()),
+  engineType: '',
+  vin: '',
+  mileage: '',
+  nickname: '',
+  lastServiceDate: '',
+};
+
+const ENGINE_OPTIONS = Object.entries(ENGINE_TYPE_LABELS) as [EngineType, string][];
 
 export function AddCar() {
   const navigate = useNavigate();
@@ -46,9 +60,11 @@ export function AddCar() {
           make: car.make,
           model: car.model,
           year: String(car.year),
+          engineType: car.engineType ?? '',
           vin: car.vin ?? '',
           mileage: String(car.mileage),
           nickname: car.nickname ?? '',
+          lastServiceDate: '',
         });
       });
     }
@@ -99,6 +115,7 @@ export function AddCar() {
   const validate = (): string | null => {
     if (!form.make.trim()) return 'Укажите марку автомобиля';
     if (!form.model.trim()) return 'Укажите модель автомобиля';
+    if (!form.engineType) return 'Укажите тип двигателя';
     const year = Number(form.year);
     if (!year || year < 1990 || year > currentYear()) return `Год должен быть от 1990 до ${currentYear()}`;
     const mileage = Number(form.mileage);
@@ -121,6 +138,7 @@ export function AddCar() {
         make: form.make.trim(),
         model: form.model.trim(),
         year: Number(form.year),
+        engineType: form.engineType || undefined,
         vin: form.vin.trim() || undefined,
         mileage: Number(form.mileage),
         nickname: form.nickname.trim() || undefined,
@@ -128,7 +146,19 @@ export function AddCar() {
       if (isEdit) {
         await api.updateCar(id!, payload as any);
       } else {
-        await api.createCar(payload as any);
+        const newCar = await api.createCar(payload as any);
+        // Если пользователь указал дату последнего сервиса — запрашиваем рекомендации в фоне
+        if (form.lastServiceDate) {
+          fetchSuggestions(
+            newCar.id,
+            form.make.trim(),
+            form.model.trim(),
+            form.year,
+            form.lastServiceDate,
+            Number(form.mileage),
+            form.engineType || undefined,
+          );
+        }
       }
       hapticSuccess();
       webApp.disableClosingConfirmation();
@@ -138,6 +168,20 @@ export function AddCar() {
       setError(e.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    hapticImpact('medium');
+    if (!confirm('Удалить автомобиль? Все записи и план обслуживания будут удалены безвозвратно.')) return;
+    try {
+      await api.deleteCar(id!);
+      hapticSuccess();
+      webApp.disableClosingConfirmation();
+      navigate('/', { replace: true });
+    } catch (e: any) {
+      hapticError();
+      setError(e.message);
     }
   };
 
@@ -167,6 +211,20 @@ export function AddCar() {
           suggestions={modelSuggestions}
           placeholder={form.make ? 'Выберите модель' : 'Сначала выберите марку'}
         />
+
+        <div className={styles.field}>
+          <label className={styles.label}>Тип двигателя *</label>
+          <select
+            className={styles.select}
+            value={form.engineType}
+            onChange={(e) => set('engineType', e.target.value as EngineType)}
+          >
+            <option value="">— выберите —</option>
+            {ENGINE_OPTIONS.map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+        </div>
 
         <div className={styles.field}>
           <label className={styles.label}>Год выпуска *</label>
@@ -215,6 +273,22 @@ export function AddCar() {
             placeholder="Рабочая, Жена..."
           />
         </div>
+
+        {!isEdit && (
+          <div className={styles.field}>
+            <label className={styles.label}>Когда последний раз были в сервисе (примерно)?</label>
+            <input
+              className={styles.input}
+              type="date"
+              value={form.lastServiceDate}
+              max={todayISO()}
+              onChange={(e) => set('lastServiceDate', e.target.value)}
+            />
+            <span className={styles.fieldHint}>
+              Используется для составления рекомендаций по ТО
+            </span>
+          </div>
+        )}
       </div>
 
       <div className={styles.actions}>
@@ -224,6 +298,11 @@ export function AddCar() {
         <button className={styles.cancelBtn} onClick={() => navigate(-1)}>
           Отмена
         </button>
+        {isEdit && (
+          <button className={styles.deleteBtn} onClick={handleDelete}>
+            Удалить автомобиль
+          </button>
+        )}
       </div>
     </div>
   );

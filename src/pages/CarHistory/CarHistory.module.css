@@ -286,3 +286,59 @@
   margin-bottom: 16px;
   font-size: 14px;
 }
+
+/* Suggestion banner (loading / error states) */
+.suggestionBanner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.suggestionSpinner {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.suggestionBannerError {
+  background: #fff3e0;
+  color: #e65100;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+/* Apply recommendations button */
+.applyBtn {
+  width: 100%;
+  margin-top: 16px;
+  padding: 15px;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.applyBtn:disabled {
+  opacity: 0.6;
+}
+
+.applyBtn:active:not(:disabled) {
+  opacity: 0.85;
+}
