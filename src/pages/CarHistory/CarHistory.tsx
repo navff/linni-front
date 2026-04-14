@@ -6,7 +6,7 @@ import { RecordCard } from '../../components/RecordCard/RecordCard';
 import { MaintenancePlanCard } from '../../components/MaintenancePlanCard/MaintenancePlanCard';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
 import { FloatButton } from '../../components/FloatButton/FloatButton';
-import { useWebApp, hapticImpact, hapticSuccess, hapticError } from '../../hooks/useWebApp';
+import { useWebApp, hapticImpact, hapticSuccess } from '../../hooks/useWebApp';
 import { formatMileage, formatCost, totalCost, yearCost, carLabel } from '../../utils/formatters';
 import {
   getState,
@@ -34,7 +34,6 @@ export function CarHistory() {
 
   // Service suggestions state
   const [suggestionState, setSuggestionState] = useState<SuggestionState>({ status: 'idle' });
-  const [applyingPlans, setApplyingPlans] = useState(false);
 
   // Dialog: запрос даты последнего сервиса перед получением рекомендаций
   const [showDateDialog, setShowDateDialog] = useState(false);
@@ -71,62 +70,27 @@ export function CarHistory() {
     return unsubscribe;
   }, [id]);
 
-  const handleApplySuggestions = async (
-    suggestions: SuggestionState['suggestions'],
-    lastServiceDate: string | undefined,
-  ) => {
-    if (!id || !suggestions?.length) return;
-    setApplyingPlans(true);
-    try {
-      const created: MaintenancePlan[] = [];
-      for (const s of suggestions) {
-        // Парсим целевой пробег из названия вида "Плановое ТО (74000 км)"
-        const kmMatch = s.name.match(/\((\d[\d\s]*)\s*км\)/i);
-        const targetKm = kmMatch ? parseInt(kmMatch[1].replace(/\s/g, ''), 10) : undefined;
-        const plan = await api.createMaintenancePlan(id, {
-          title: s.name,
-          targetKm,
-          targetDate: s.date || undefined,
-          summary: s.summary || undefined,
-          notes: s.services.length ? s.services.join('\n') : undefined,
-        } as Omit<MaintenancePlan, 'id' | 'carId' | 'createdAt'>);
-        created.push(plan);
-      }
-      clearSuggestions(id);
-      setSuggestionState({ status: 'idle' });
-      setPlans((prev) => [...prev, ...created]);
-      hapticSuccess();
-    } catch (e: any) {
-      hapticError();
-      setError(e.message);
-    } finally {
-      setApplyingPlans(false);
-    }
-  };
-
-  // Автоматически применяем рекомендации, как только они пришли и регламент пуст
+  // Планы уже сохранены в БД бэкендом — просто добавляем их в список
   useEffect(() => {
-    if (
-      suggestionState.status === 'done' &&
-      plans.length === 0 &&
-      !applyingPlans &&
-      suggestionState.suggestions?.length
-    ) {
-      handleApplySuggestions(suggestionState.suggestions, suggestionState.lastServiceDate);
+    if (suggestionState.status === 'done' && suggestionState.suggestions?.length) {
+      setPlans((prev) => [...prev, ...suggestionState.suggestions!]);
+      clearSuggestions(id!);
+      setSuggestionState({ status: 'idle' });
+      hapticSuccess();
     }
   }, [suggestionState.status]);
 
   // Клик по кнопке «Заполнить по рекомендациям» — только в idle/error, открывает диалог даты
   const handleSuggestClick = () => {
-    if (suggestionState.status === 'loading' || applyingPlans) return;
+    if (suggestionState.status === 'loading') return;
     setDialogDate('');
     setShowDateDialog(true);
   };
 
   const handleDateDialogSubmit = () => {
-    if (!id || !car) return;
+    if (!id) return;
     setShowDateDialog(false);
-    fetchSuggestions(id, car.make, car.model, String(car.year), dialogDate || todayISO(), car.mileage, car.engineType);
+    fetchSuggestions(id, dialogDate || todayISO());
   };
 
   const handleDelete = async (record: ServiceRecord) => {
@@ -293,13 +257,11 @@ export function CarHistory() {
             <button
               className={styles.applyBtn}
               onClick={handleSuggestClick}
-              disabled={applyingPlans || suggestionState.status === 'loading'}
+              disabled={suggestionState.status === 'loading'}
             >
-              {applyingPlans
-                ? 'Создаём регламент…'
-                : suggestionState.status === 'loading'
-                  ? 'Подбираем рекомендации…'
-                  : 'Заполнить по рекомендациям'}
+              {suggestionState.status === 'loading'
+                ? 'Подбираем рекомендации…'
+                : 'Заполнить по рекомендациям'}
             </button>
           )}
 

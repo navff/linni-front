@@ -149,15 +149,7 @@ export function AddCar() {
         const newCar = await api.createCar(payload as any);
         // Если пользователь указал дату последнего сервиса — запрашиваем рекомендации в фоне
         if (form.lastServiceDate) {
-          fetchSuggestions(
-            newCar.id,
-            form.make.trim(),
-            form.model.trim(),
-            form.year,
-            form.lastServiceDate,
-            Number(form.mileage),
-            form.engineType || undefined,
-          );
+          fetchSuggestions(newCar.id, form.lastServiceDate);
         }
       }
       hapticSuccess();

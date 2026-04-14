@@ -3,28 +3,22 @@
  * The external API can take 20–40 seconds, so requests run in the background
  * with a 70-second timeout. Results are stored in memory + localStorage so
  * they survive navigation between pages.
+ *
+ * The backend handles fetching from n8n and saving plans to the DB.
+ * On success, `suggestions` contains the created MaintenancePlan records.
  */
 
-const API_URL = 'https://n8n.navff.ru/webhook/linni/service-suggestions';
-const API_TOKEN = '9ndns28292bjdjhja';
+import { MaintenancePlan } from '../types';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? '';
 const TIMEOUT_MS = 70_000;
 const STORAGE_KEY = 'linni_service_suggestions';
-
-export interface ServiceSuggestion {
-  name: string;
-  summary?: string;
-  interval_days: number;
-  interval_km: number;
-  services: string[];
-  date: string;
-}
 
 export type SuggestionStatus = 'idle' | 'loading' | 'done' | 'error';
 
 export interface SuggestionState {
   status: SuggestionStatus;
-  suggestions?: ServiceSuggestion[];
-  lastServiceDate?: string;
+  suggestions?: MaintenancePlan[];
   error?: string;
 }
 
@@ -100,74 +94,48 @@ export function clearSuggestions(carId: string) {
 // ── Fetch ─────────────────────────────────────────────────────────────────────
 
 /**
- * Fire-and-forget: starts a background fetch and resolves when done.
+ * Fire-and-forget: starts a background request to the backend, which fetches
+ * suggestions from n8n and saves them as MaintenancePlan records in the DB.
  * Callers should NOT await this — navigate away immediately.
  */
-const ENGINE_TYPE_LABELS: Record<string, string> = {
-  petrol: 'бензин',
-  diesel: 'дизель',
-  hybrid: 'гибрид',
-  electric: 'электро',
-};
-
 export async function fetchSuggestions(
   carId: string,
-  make: string,
-  model: string,
-  year: string,
   lastServiceDate: string,
-  mileage: number,
-  engineType?: string,
 ): Promise<void> {
-  // Skip if already in progress or done
   const current = getState(carId);
   if (current.status === 'loading' || current.status === 'done') return;
 
-  setState(carId, { status: 'loading', lastServiceDate });
+  setState(carId, { status: 'loading' });
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const engineLabel = engineType ? ENGINE_TYPE_LABELS[engineType] : undefined;
-    const carModel = engineLabel ? `${make} ${model} (${engineLabel})` : `${make} ${model}`;
-
-    const res = await fetch(API_URL, {
+    const res = await fetch(`${API_BASE_URL}/api/cars/${carId}/suggestions`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${API_TOKEN}`,
         'Content-Type': 'application/json',
+        'X-Init-Data': window.WebApp?.initData ?? 'dev',
       },
-      body: JSON.stringify({
-        car_model: carModel,
-        year,
-        last_service_date: lastServiceDate,
-        milage: String(mileage),
-      }),
+      body: JSON.stringify({ last_service_date: lastServiceDate }),
       signal: controller.signal,
     });
 
     clearTimeout(timeoutId);
 
     if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
+      const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+      throw new Error(err.detail ?? `HTTP ${res.status}`);
     }
 
-    const data = await res.json();
-    // API returns: [{ output: [...suggestions] }]
-    const suggestions: ServiceSuggestion[] =
-      Array.isArray(data) && Array.isArray(data[0]?.output)
-        ? data[0].output
-        : [];
-
-    setState(carId, { status: 'done', suggestions, lastServiceDate });
+    const suggestions: MaintenancePlan[] = await res.json();
+    setState(carId, { status: 'done', suggestions });
   } catch (err: any) {
     clearTimeout(timeoutId);
     const isTimeout = err.name === 'AbortError';
     setState(carId, {
       status: 'error',
       error: isTimeout ? 'Превышено время ожидания ответа от сервера' : err.message,
-      lastServiceDate,
     });
   }
 }
