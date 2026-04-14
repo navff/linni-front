@@ -139,12 +139,16 @@ export function AddRecord() {
       } else {
         await api.createRecord(carId!, payload);
         if (linkedPlanId) {
-          await api.markMaintenancePlanDone(
+          const updatedPlans = await api.markMaintenancePlanDone(
             carId!,
             linkedPlanId,
             Number(form.mileage),
             form.date,
-          ).catch(() => {});
+          );
+          hapticSuccess();
+          webApp.disableClosingConfirmation();
+          navigate(-1, { state: { updatedPlans } });
+          return;
         }
       }
       hapticSuccess();

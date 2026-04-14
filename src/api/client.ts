@@ -105,6 +105,12 @@ export const api = {
   deleteMaintenancePlan: (carId: string, planId: string) =>
     request<void>(`/api/cars/${carId}/maintenance/${planId}`, { method: 'DELETE' }),
 
+  markMaintenancePlanDone: (carId: string, planId: string, mileage: number, date: string) =>
+    request<MaintenancePlan[]>(`/api/cars/${carId}/maintenance/${planId}/execute`, {
+      method: 'POST',
+      body: JSON.stringify({ mileage, date }),
+    }),
+
   // Catalog (public, no auth required)
   searchMakes: (q: string) =>
     request<MakeResult[]>(`/api/catalog/makes?q=${encodeURIComponent(q)}`),

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { api } from '../../api/client';
 import { Car, MaintenancePlan, ServiceRecord } from '../../types';
 import { RecordCard } from '../../components/RecordCard/RecordCard';
@@ -23,6 +23,7 @@ type Tab = 'history' | 'plan';
 export function CarHistory() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const webApp = useWebApp();
 
   const [car, setCar] = useState<Car | null>(null);
@@ -59,6 +60,16 @@ export function CarHistory() {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [id]);
+
+  // После выполнения плана AddRecord передаёт пересчитанный список планов
+  useEffect(() => {
+    const updated = (location.state as any)?.updatedPlans;
+    if (updated) {
+      setPlans(updated);
+      // Очищаем state, чтобы повторный заход не перезатирал ручные изменения
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state]);
 
   // Subscribe to background suggestion updates
   useEffect(() => {
