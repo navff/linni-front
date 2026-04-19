@@ -35,30 +35,38 @@
   font-size: 12px;
 }
 
-.categoryRow {
+.typeRow {
   display: flex;
   gap: 8px;
 }
 
-.catBtn {
+.typeBtn {
   flex: 1;
-  padding: 10px 4px;
+  padding: 12px 8px;
   border: 1.5px solid var(--color-border);
   border-radius: 12px;
   background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.15s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
-.catBtn:active {
+.typeBtn:active {
   background: var(--color-surface-active);
 }
 
-.catActive {
-  box-shadow: 0 0 0 2px var(--color-primary);
+.typeActive {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
+  color: var(--color-primary);
+}
+
+.row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
 .input {

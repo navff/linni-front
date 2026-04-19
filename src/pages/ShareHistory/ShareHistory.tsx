@@ -140,7 +140,9 @@ export function SharedView() {
               </div>
               <div className={styles.srTitle}>{r.title}</div>
               <div className={styles.srMeta}>
-                <span>{formatMileage(r.mileage)}</span>
+                {r.mileage != null && <span>{formatMileage(r.mileage)}</span>}
+                {r.fuelLiters != null && <span>{r.fuelLiters} л</span>}
+                {r.consumptionPer100km != null && <span>{r.consumptionPer100km} л/100км</span>}
                 {r.cost != null && r.cost > 0 && <span>{r.cost.toLocaleString('ru-RU')} ₽</span>}
               </div>
               {r.workshop && <div className={styles.srWorkshop}>{r.workshop}</div>}

@@ -30,7 +30,7 @@ export function CarHistory() {
   const [car, setCar] = useState<Car | null>(null);
   const [records, setRecords] = useState<ServiceRecord[]>([]);
   const [plans, setPlans] = useState<MaintenancePlan[]>([]);
-  const [tab, setTab] = useState<Tab>('plan');
+  const [tab, setTab] = useState<Tab>('history');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

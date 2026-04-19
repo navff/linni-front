@@ -43,6 +43,24 @@ export const analytics = {
   recordDeleted: (carId: string) =>
     track('record_deleted', { car_id: carId }),
 
+  fuelRecordCreated: (carId: string, params: {
+    liters: number;
+    cost?: number;
+    mileage?: number;
+    consumptionPer100km?: number;
+  }) =>
+    track('fuel_record_created', {
+      car_id: carId,
+      liters: params.liters,
+      cost: params.cost ?? null,
+      mileage: params.mileage ?? null,
+      consumption_per_100km: params.consumptionPer100km ?? null,
+      has_mileage: params.mileage != null,
+    }),
+
+  fuelRecordEdited: (carId: string) =>
+    track('fuel_record_edited', { car_id: carId }),
+
   planCreated: (carId: string, title: string) =>
     track('plan_created', { car_id: carId, title }),
 

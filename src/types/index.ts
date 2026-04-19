@@ -23,15 +23,20 @@ export interface Car {
   updatedAt: string;
 }
 
+export type RecordType = 'service' | 'fuel';
+
 export interface ServiceRecord {
   id: string;
   carId: string;
+  recordType: RecordType;
   title: string;
   date: string;
-  mileage: number;
+  mileage?: number;
   cost?: number;
   workshop?: string;
   notes?: string;
+  fuelLiters?: number;
+  consumptionPer100km?: number;
   attachments: string[];
   createdAt: string;
 }

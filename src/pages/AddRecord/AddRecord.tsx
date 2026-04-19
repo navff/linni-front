@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { api } from '../../api/client';
-import { MaintenancePlan, ServiceRecord, TITLE_SUGGESTIONS } from '../../types';
+import { MaintenancePlan, RecordType, ServiceRecord, TITLE_SUGGESTIONS } from '../../types';
 import { Autocomplete } from '../../components/Autocomplete/Autocomplete';
 import { useWebApp, hapticSuccess, hapticError } from '../../hooks/useWebApp';
 import { todayISO } from '../../utils/formatters';
@@ -9,21 +9,25 @@ import { analytics } from '../../utils/analytics';
 import styles from './AddRecord.module.css';
 
 interface FormData {
+  recordType: RecordType;
   title: string;
   date: string;
   mileage: string;
   cost: string;
   workshop: string;
   notes: string;
+  fuelLiters: string;
 }
 
 const EMPTY: FormData = {
+  recordType: 'fuel',
   title: '',
   date: todayISO(),
   mileage: '',
   cost: '',
   workshop: '',
   notes: '',
+  fuelLiters: '',
 };
 
 export function AddRecord() {
@@ -62,8 +66,9 @@ export function AddRecord() {
   useEffect(() => {
     if (!carId) return;
     api.getRecords(carId).then((records) => {
-      if (records.length > 0) {
-        setPrevMileage(records[0].mileage);
+      const withMileage = records.filter((r) => r.mileage != null);
+      if (withMileage.length > 0) {
+        setPrevMileage(withMileage[0].mileage!);
       }
     });
 
@@ -89,12 +94,14 @@ export function AddRecord() {
         const rec = records.find((r) => r.id === recordId);
         if (rec) {
           setForm({
+            recordType: rec.recordType,
             title: rec.title,
             date: rec.date,
-            mileage: String(rec.mileage),
+            mileage: rec.mileage != null ? String(rec.mileage) : '',
             cost: rec.cost != null ? String(rec.cost) : '',
             workshop: rec.workshop ?? '',
             notes: rec.notes ?? '',
+            fuelLiters: rec.fuelLiters != null ? String(rec.fuelLiters) : '',
           });
         }
       });
@@ -106,12 +113,29 @@ export function AddRecord() {
     setDirty(true);
   };
 
+  const setRecordType = (type: RecordType) => {
+    setForm((f) => ({ ...f, recordType: type }));
+    setDirty(true);
+  };
+
   const validate = (): string | null => {
-    if (!form.title.trim()) return 'Укажите наименование';
-    const mileage = Number(form.mileage);
-    if (!mileage || mileage <= 0) return 'Укажите корректный пробег';
-    if (!isEdit && prevMileage > 0 && mileage < prevMileage) {
-      return `Пробег не может быть меньше предыдущей записи (${prevMileage} км)`;
+    if (form.recordType === 'service') {
+      if (!form.title.trim()) return 'Укажите наименование';
+      const mileage = Number(form.mileage);
+      if (!mileage || mileage <= 0) return 'Укажите корректный пробег';
+      if (!isEdit && prevMileage > 0 && mileage < prevMileage) {
+        return `Пробег не может быть меньше предыдущей записи (${prevMileage} км)`;
+      }
+    } else {
+      const liters = Number(form.fuelLiters);
+      if (!liters || liters <= 0) return 'Укажите количество литров';
+      if (form.mileage) {
+        const mileage = Number(form.mileage);
+        if (mileage <= 0) return 'Укажите корректный пробег';
+        if (!isEdit && prevMileage > 0 && mileage < prevMileage) {
+          return `Пробег не может быть меньше предыдущей записи (${prevMileage} км)`;
+        }
+      }
     }
     if (!form.date) return 'Укажите дату';
     return null;
@@ -127,35 +151,50 @@ export function AddRecord() {
     setSaving(true);
     setError(null);
     try {
-      const payload: Omit<ServiceRecord, 'id' | 'carId' | 'createdAt' | 'attachments'> = {
+      const mileageVal = form.mileage ? Number(form.mileage) : undefined;
+      const payload: Omit<ServiceRecord, 'id' | 'carId' | 'createdAt' | 'attachments' | 'consumptionPer100km'> = {
+        recordType: form.recordType,
         title: form.title.trim(),
         date: form.date,
-        mileage: Number(form.mileage),
+        mileage: mileageVal,
         cost: form.cost ? Number(form.cost) : undefined,
         workshop: form.workshop.trim() || undefined,
         notes: form.notes.trim() || undefined,
+        fuelLiters: form.recordType === 'fuel' && form.fuelLiters ? Number(form.fuelLiters) : undefined,
       };
       if (isEdit && recordId) {
         await api.updateRecord(carId!, recordId, payload);
-        analytics.recordEdited(carId!);
+        if (form.recordType === 'fuel') {
+          analytics.fuelRecordEdited(carId!);
+        } else {
+          analytics.recordEdited(carId!);
+        }
       } else {
-        await api.createRecord(carId!, payload);
-        if (linkedPlanId) {
+        const created = await api.createRecord(carId!, payload);
+        if (form.recordType === 'fuel') {
+          analytics.fuelRecordCreated(carId!, {
+            liters: Number(form.fuelLiters),
+            cost: form.cost ? Number(form.cost) : undefined,
+            mileage: mileageVal,
+            consumptionPer100km: created.consumptionPer100km,
+          });
+        } else if (linkedPlanId) {
           const linkedPlan = plans.find((p) => p.id === linkedPlanId);
-          const updatedPlans = await api.markMaintenancePlanDone(
+          await api.markMaintenancePlanDone(
             carId!,
             linkedPlanId,
-            Number(form.mileage),
+            mileageVal ?? 0,
             form.date,
           );
           analytics.recordCreated(carId!, payload.title, true);
           analytics.planExecuted(carId!, linkedPlan?.title ?? '');
           hapticSuccess();
           webApp.disableClosingConfirmation();
-          navigate(-1, { state: { updatedPlans } });
+          navigate(-1);
           return;
+        } else {
+          analytics.recordCreated(carId!, payload.title, false);
         }
-        analytics.recordCreated(carId!, payload.title, false);
       }
       hapticSuccess();
       webApp.disableClosingConfirmation();
@@ -168,6 +207,8 @@ export function AddRecord() {
     }
   };
 
+  const isFuel = form.recordType === 'fuel';
+
   return (
     <div className={styles.page}>
       <h1 className={styles.title}>{isEdit ? 'Редактировать запись' : 'Новая запись'}</h1>
@@ -175,14 +216,35 @@ export function AddRecord() {
       {error && <div className={styles.error}>{error}</div>}
 
       <div className={styles.form}>
-        <Autocomplete
-          label="Наименование"
-          required
-          value={form.title}
-          onChange={(v) => set('title', v)}
-          suggestions={TITLE_SUGGESTIONS}
-          placeholder="Замена масла..."
-        />
+        {!isEdit && (
+          <div className={styles.typeRow}>
+            <button
+              className={`${styles.typeBtn} ${!isFuel ? styles.typeActive : ''}`}
+              onClick={() => setRecordType('service')}
+              type="button"
+            >
+              🔧 ТО / Ремонт
+            </button>
+            <button
+              className={`${styles.typeBtn} ${isFuel ? styles.typeActive : ''}`}
+              onClick={() => setRecordType('fuel')}
+              type="button"
+            >
+              ⛽ Заправка
+            </button>
+          </div>
+        )}
+
+        {!isFuel && (
+          <Autocomplete
+            label="Наименование"
+            required
+            value={form.title}
+            onChange={(v) => set('title', v)}
+            suggestions={TITLE_SUGGESTIONS}
+            placeholder="Замена масла..."
+          />
+        )}
 
         <div className={styles.field}>
           <label className={styles.label}>Дата *</label>
@@ -195,45 +257,95 @@ export function AddRecord() {
           />
         </div>
 
-        <div className={styles.field}>
-          <label className={styles.label}>
-            Пробег (км) *
-            {prevMileage > 0 && !isEdit && (
-              <span className={styles.hintInline}> — предыдущая запись: {prevMileage.toLocaleString('ru-RU')} км</span>
-            )}
-          </label>
-          <input
-            className={styles.input}
-            type="number"
-            min={isEdit ? 1 : prevMileage}
-            value={form.mileage}
-            onChange={(e) => set('mileage', e.target.value)}
-            placeholder={prevMileage > 0 ? String(prevMileage) : '45000'}
-          />
-        </div>
+        {isFuel ? (
+          <>
+            <div className={styles.row2}>
+              <div className={styles.field}>
+                <label className={styles.label}>Литры *</label>
+                <input
+                  className={styles.input}
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.fuelLiters}
+                  onChange={(e) => set('fuelLiters', e.target.value)}
+                  placeholder="45.0"
+                />
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>Сумма (₽)</label>
+                <input
+                  className={styles.input}
+                  type="number"
+                  min="0"
+                  value={form.cost}
+                  onChange={(e) => set('cost', e.target.value)}
+                  placeholder="3500"
+                />
+              </div>
+            </div>
 
-        <div className={styles.field}>
-          <label className={styles.label}>Стоимость (₽)</label>
-          <input
-            className={styles.input}
-            type="number"
-            min="0"
-            value={form.cost}
-            onChange={(e) => set('cost', e.target.value)}
-            placeholder="3500"
-          />
-        </div>
+            <div className={styles.field}>
+              <label className={styles.label}>
+                Пробег (км)
+                {prevMileage > 0 && !isEdit && (
+                  <span className={styles.hintInline}> — предыдущая: {prevMileage.toLocaleString('ru-RU')} км</span>
+                )}
+                <span className={styles.hintInline}> — для расчёта расхода</span>
+              </label>
+              <input
+                className={styles.input}
+                type="number"
+                min={isEdit ? 1 : prevMileage || 1}
+                value={form.mileage}
+                onChange={(e) => set('mileage', e.target.value)}
+                placeholder={prevMileage > 0 ? String(prevMileage) : '45000'}
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            <div className={styles.field}>
+              <label className={styles.label}>
+                Пробег (км) *
+                {prevMileage > 0 && !isEdit && (
+                  <span className={styles.hintInline}> — предыдущая запись: {prevMileage.toLocaleString('ru-RU')} км</span>
+                )}
+              </label>
+              <input
+                className={styles.input}
+                type="number"
+                min={isEdit ? 1 : prevMileage}
+                value={form.mileage}
+                onChange={(e) => set('mileage', e.target.value)}
+                placeholder={prevMileage > 0 ? String(prevMileage) : '45000'}
+              />
+            </div>
 
-        <div className={styles.field}>
-          <label className={styles.label}>Автосервис / мастер</label>
-          <input
-            className={styles.input}
-            type="text"
-            value={form.workshop}
-            onChange={(e) => set('workshop', e.target.value)}
-            placeholder="Иваново Авто..."
-          />
-        </div>
+            <div className={styles.field}>
+              <label className={styles.label}>Стоимость (₽)</label>
+              <input
+                className={styles.input}
+                type="number"
+                min="0"
+                value={form.cost}
+                onChange={(e) => set('cost', e.target.value)}
+                placeholder="3500"
+              />
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.label}>Автосервис / мастер</label>
+              <input
+                className={styles.input}
+                type="text"
+                value={form.workshop}
+                onChange={(e) => set('workshop', e.target.value)}
+                placeholder="Иваново Авто..."
+              />
+            </div>
+          </>
+        )}
 
         <div className={styles.field}>
           <label className={styles.label}>Комментарий</label>
@@ -246,7 +358,7 @@ export function AddRecord() {
           />
         </div>
 
-        {!isEdit && plans.length > 0 && (
+        {!isEdit && !isFuel && plans.length > 0 && (
           <div className={styles.field}>
             <label className={styles.label}>Выполнение регламента</label>
             <select
