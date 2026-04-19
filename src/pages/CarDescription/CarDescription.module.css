@@ -1,0 +1,213 @@
+.page {
+  padding: 16px;
+  min-height: 100vh;
+  background: var(--color-bg);
+  padding-bottom: 90px;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.errorPage {
+  padding: 20px;
+  color: #c62828;
+  font-size: 14px;
+}
+
+.header {
+  margin-bottom: 20px;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--color-primary);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  margin-bottom: 10px;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.editIconBtn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 8px;
+  line-height: 1;
+}
+
+.editIconBtn:active {
+  background: var(--color-surface-active);
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}
+
+.error {
+  background: #ffebee;
+  color: #c62828;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+/* Generating state banner */
+.generatingBanner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin-bottom: 16px;
+}
+
+.generatingSpinner {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Markdown rendered output */
+.markdownBody {
+  background: var(--color-surface);
+  border-radius: 16px;
+  padding: 16px 18px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--color-text);
+}
+
+.mdH1 {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 4px;
+}
+
+.mdH2 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 12px 0 2px;
+}
+
+.mdP {
+  margin: 0;
+  color: var(--color-text);
+}
+
+.mdSpacer {
+  height: 8px;
+}
+
+/* Edit mode textarea */
+.textarea {
+  padding: 14px;
+  border-radius: 14px;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 15px;
+  line-height: 1.6;
+  outline: none;
+  resize: vertical;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+  min-height: 280px;
+}
+
+.textarea:focus {
+  border-color: var(--color-primary);
+}
+
+.textarea::placeholder {
+  color: var(--color-text-secondary);
+  opacity: 0.6;
+}
+
+.actions {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.saveBtn {
+  width: 100%;
+  padding: 15px;
+  border-radius: 14px;
+  border: none;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.saveBtn:disabled {
+  opacity: 0.6;
+}
+
+.saveBtn:active:not(:disabled) {
+  opacity: 0.85;
+}
+
+.cancelBtn {
+  width: 100%;
+  padding: 15px;
+  border-radius: 14px;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+}

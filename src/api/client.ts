@@ -79,6 +79,17 @@ export const api = {
       body: JSON.stringify({ mileage }),
     }),
 
+  // Car description update
+  updateDescription: (carId: string, description: string | null) =>
+    request<Car>(`/api/cars/${carId}/description`, {
+      method: 'PATCH',
+      body: JSON.stringify({ description }),
+    }),
+
+  // Trigger background description generation (returns 202 immediately)
+  generateDescription: (carId: string) =>
+    request<{ status: string }>(`/api/cars/${carId}/generate-description`, { method: 'POST' }),
+
   // Maintenance plans
   getMaintenancePlans: (carId: string) =>
     request<MaintenancePlan[]>(`/api/cars/${carId}/maintenance`),

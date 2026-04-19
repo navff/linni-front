@@ -82,6 +82,25 @@
   background: var(--color-surface-active);
 }
 
+.descBtn {
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  transition: background 0.15s;
+  line-height: 1;
+}
+
+.descBtn:active {
+  background: var(--color-surface-active);
+}
+
+.descBtnFilled {
+  border-color: var(--color-primary);
+}
+
 .stats {
   display: grid;
   grid-template-columns: 1fr 1fr;

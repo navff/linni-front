@@ -6,6 +6,7 @@ import { CarHistory } from './pages/CarHistory/CarHistory';
 import { AddRecord } from './pages/AddRecord/AddRecord';
 import { ShareHistory, SharedView } from './pages/ShareHistory/ShareHistory';
 import { AddMaintenancePlan } from './pages/AddMaintenancePlan/AddMaintenancePlan';
+import { CarDescription } from './pages/CarDescription/CarDescription';
 import { useWebApp } from './hooks/useWebApp';
 
 export function App() {
@@ -30,6 +31,7 @@ export function App() {
       <Route path="/cars/:id" element={<CarHistory />} />
       <Route path="/cars/:id/edit" element={<AddCar />} />
       <Route path="/cars/:id/share" element={<ShareHistory />} />
+      <Route path="/cars/:id/description" element={<CarDescription />} />
       <Route path="/cars/:carId/records/new" element={<AddRecord />} />
       <Route path="/cars/:carId/records/:recordId" element={<AddRecord />} />
       <Route path="/cars/:carId/maintenance/new" element={<AddMaintenancePlan />} />

@@ -18,6 +18,7 @@ export interface Car {
   mileage: number;
   nickname?: string;
   photoUrl?: string;
+  description?: string;
   createdAt: string;
   updatedAt: string;
 }

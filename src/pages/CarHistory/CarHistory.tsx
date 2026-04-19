@@ -172,6 +172,13 @@ export function CarHistory() {
           <button className={styles.shareBtn} onClick={handleShare}>
             🔗 Передать
           </button>
+          <button
+            className={`${styles.descBtn} ${car.description ? styles.descBtnFilled : ''}`}
+            onClick={() => navigate(`/cars/${id}/description`)}
+            title="Описание"
+          >
+            📋
+          </button>
         </div>
       </div>
 
