@@ -6,6 +6,7 @@ import { Car, ServiceRecord, SharedCarData } from '../../types';
 import { RecordCard } from '../../components/RecordCard/RecordCard';
 import { useWebApp, hapticSuccess } from '../../hooks/useWebApp';
 import { formatMileage, formatDate, carLabel, totalCost } from '../../utils/formatters';
+import { analytics } from '../../utils/analytics';
 import styles from './ShareHistory.module.css';
 
 // Share generation page
@@ -23,6 +24,7 @@ export function ShareHistory() {
     webApp.BackButton.show();
     const back = () => navigate(-1);
     webApp.BackButton.onClick(back);
+    if (id) analytics.sharePageOpened(id);
     return () => webApp.BackButton.offClick(back);
   }, []);
 
@@ -39,6 +41,7 @@ export function ShareHistory() {
     try {
       const result = await api.shareCar(id);
       setShareUrl(result.shareUrl);
+      analytics.shareLinkGenerated(id);
       hapticSuccess();
     } catch (e: any) {
       setError(e.message);
@@ -49,6 +52,7 @@ export function ShareHistory() {
 
   const handleShare = () => {
     if (!shareUrl) return;
+    analytics.shareSent(id!);
     try {
       webApp.shareMaxContent({ text: `История обслуживания автомобиля: ${shareUrl}` });
     } catch {

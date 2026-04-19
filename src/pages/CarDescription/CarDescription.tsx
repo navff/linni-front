@@ -4,6 +4,7 @@ import { api } from '../../api/client';
 import { Car } from '../../types';
 import { useWebApp, hapticSuccess, hapticError } from '../../hooks/useWebApp';
 import { carLabel } from '../../utils/formatters';
+import { analytics } from '../../utils/analytics';
 import styles from './CarDescription.module.css';
 
 // Simple markdown renderer for n8n output patterns
@@ -110,7 +111,10 @@ export function CarDescription() {
         setCar(c);
         if (c.description) {
           setDescription(c.description);
+          analytics.descriptionViewed(id, true);
         } else {
+          analytics.descriptionViewed(id, false);
+          analytics.descriptionGenerated(id);
           api.generateDescription(id).catch(() => {});
           startPolling(id);
         }
@@ -133,6 +137,7 @@ export function CarDescription() {
       setCar(updated);
       setDirty(false);
       setIsEditing(false);
+      analytics.descriptionSaved(id);
       hapticSuccess();
     } catch (e: any) {
       hapticError();

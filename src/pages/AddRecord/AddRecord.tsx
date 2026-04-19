@@ -5,6 +5,7 @@ import { MaintenancePlan, ServiceRecord, TITLE_SUGGESTIONS } from '../../types';
 import { Autocomplete } from '../../components/Autocomplete/Autocomplete';
 import { useWebApp, hapticSuccess, hapticError } from '../../hooks/useWebApp';
 import { todayISO } from '../../utils/formatters';
+import { analytics } from '../../utils/analytics';
 import styles from './AddRecord.module.css';
 
 interface FormData {
@@ -136,20 +137,25 @@ export function AddRecord() {
       };
       if (isEdit && recordId) {
         await api.updateRecord(carId!, recordId, payload);
+        analytics.recordEdited(carId!);
       } else {
         await api.createRecord(carId!, payload);
         if (linkedPlanId) {
+          const linkedPlan = plans.find((p) => p.id === linkedPlanId);
           const updatedPlans = await api.markMaintenancePlanDone(
             carId!,
             linkedPlanId,
             Number(form.mileage),
             form.date,
           );
+          analytics.recordCreated(carId!, payload.title, true);
+          analytics.planExecuted(carId!, linkedPlan?.title ?? '');
           hapticSuccess();
           webApp.disableClosingConfirmation();
           navigate(-1, { state: { updatedPlans } });
           return;
         }
+        analytics.recordCreated(carId!, payload.title, false);
       }
       hapticSuccess();
       webApp.disableClosingConfirmation();

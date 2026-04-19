@@ -6,6 +6,7 @@ import { Autocomplete } from '../../components/Autocomplete/Autocomplete';
 import { useWebApp, hapticSuccess, hapticError, hapticImpact } from '../../hooks/useWebApp';
 import { currentYear, todayISO } from '../../utils/formatters';
 import { fetchSuggestions } from '../../services/serviceSuggestions';
+import { analytics } from '../../utils/analytics';
 import styles from './AddCar.module.css';
 
 interface FormData {
@@ -145,9 +146,10 @@ export function AddCar() {
       };
       if (isEdit) {
         await api.updateCar(id!, payload as any);
+        analytics.carEdited(id!);
       } else {
         const newCar = await api.createCar(payload as any);
-        // Если пользователь указал дату последнего сервиса — запрашиваем рекомендации в фоне
+        analytics.carCreated(payload.make, payload.engineType ?? '');
         if (form.lastServiceDate) {
           fetchSuggestions(newCar.id, form.lastServiceDate);
         }
@@ -168,6 +170,7 @@ export function AddCar() {
     if (!confirm('Удалить автомобиль? Все записи и план обслуживания будут удалены безвозвратно.')) return;
     try {
       await api.deleteCar(id!);
+      analytics.carDeleted(id!);
       hapticSuccess();
       webApp.disableClosingConfirmation();
       navigate('/', { replace: true });

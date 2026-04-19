@@ -6,6 +6,7 @@ import { CarCard } from '../../components/CarCard/CarCard';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
 import { FloatButton } from '../../components/FloatButton/FloatButton';
 import { useWebApp } from '../../hooks/useWebApp';
+import { analytics } from '../../utils/analytics';
 import styles from './Garage.module.css';
 
 export function Garage() {
@@ -21,7 +22,7 @@ export function Garage() {
 
   useEffect(() => {
     api.getCars()
-      .then(setCars)
+      .then((data) => { setCars(data); analytics.garageViewed(data.length); })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);

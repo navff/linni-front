@@ -4,6 +4,7 @@ import { api } from '../../api/client';
 import { MaintenancePlan, TITLE_SUGGESTIONS } from '../../types';
 import { Autocomplete } from '../../components/Autocomplete/Autocomplete';
 import { useWebApp, hapticSuccess, hapticError } from '../../hooks/useWebApp';
+import { analytics } from '../../utils/analytics';
 import styles from './AddMaintenancePlan.module.css';
 
 interface FormData {
@@ -89,8 +90,10 @@ export function AddMaintenancePlan() {
 
       if (isEdit && planId) {
         await api.updateMaintenancePlan(carId!, planId, payload as Omit<MaintenancePlan, 'id' | 'carId' | 'createdAt'>);
+        analytics.planEdited(carId!);
       } else {
         await api.createMaintenancePlan(carId!, payload as Omit<MaintenancePlan, 'id' | 'carId' | 'createdAt'>);
+        analytics.planCreated(carId!, payload.title);
       }
       hapticSuccess();
       webApp.disableClosingConfirmation();

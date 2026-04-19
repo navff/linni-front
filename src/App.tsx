@@ -8,9 +8,15 @@ import { ShareHistory, SharedView } from './pages/ShareHistory/ShareHistory';
 import { AddMaintenancePlan } from './pages/AddMaintenancePlan/AddMaintenancePlan';
 import { CarDescription } from './pages/CarDescription/CarDescription';
 import { useWebApp } from './hooks/useWebApp';
+import { analytics, initAnalytics } from './utils/analytics';
 
 export function App() {
   const webApp = useWebApp();
+
+  useEffect(() => {
+    initAnalytics(webApp.initDataUnsafe.user?.id);
+    analytics.appOpen();
+  }, []);
 
   useEffect(() => {
     // Handle deep link start_param

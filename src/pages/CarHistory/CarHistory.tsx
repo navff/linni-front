@@ -16,6 +16,7 @@ import {
   SuggestionState,
 } from '../../services/serviceSuggestions';
 import { todayISO } from '../../utils/formatters';
+import { analytics } from '../../utils/analytics';
 import styles from './CarHistory.module.css';
 
 type Tab = 'history' | 'plan';
@@ -56,7 +57,7 @@ export function CarHistory() {
   useEffect(() => {
     if (!id) return;
     Promise.all([api.getCar(id), api.getRecords(id), api.getMaintenancePlans(id)])
-      .then(([c, r, p]) => { setCar(c); setRecords(r); setPlans(p); })
+      .then(([c, r, p]) => { setCar(c); setRecords(r); setPlans(p); analytics.carViewed(id); })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [id]);
@@ -94,6 +95,7 @@ export function CarHistory() {
   // Клик по кнопке «Заполнить по рекомендациям» — только в idle/error, открывает диалог даты
   const handleSuggestClick = () => {
     if (suggestionState.status === 'loading') return;
+    analytics.suggestionsRequested(id!);
     setDialogDate('');
     setShowDateDialog(true);
   };
@@ -109,6 +111,7 @@ export function CarHistory() {
     if (!confirm(`Удалить запись «${record.title}»?`)) return;
     await api.deleteRecord(id!, record.id);
     setRecords((prev) => prev.filter((r) => r.id !== record.id));
+    analytics.recordDeleted(id!);
   };
 
   const handleDeletePlan = async (plan: MaintenancePlan) => {
@@ -116,6 +119,7 @@ export function CarHistory() {
     if (!confirm(`Удалить пункт плана «${plan.title}»?`)) return;
     await api.deleteMaintenancePlan(id!, plan.id);
     setPlans((prev) => prev.filter((p) => p.id !== plan.id));
+    analytics.planDeleted(id!);
   };
 
   const handleShare = async () => {
@@ -136,6 +140,7 @@ export function CarHistory() {
       setCar(updated);
       setShowMileageDialog(false);
       setNewMileage('');
+      analytics.mileageUpdated(id!);
     } catch (e: any) {
       setMileageError(e.message);
     } finally {
@@ -197,13 +202,13 @@ export function CarHistory() {
       <div className={styles.tabs}>
         <button
           className={`${styles.tabBtn} ${tab === 'plan' ? styles.tabActive : ''}`}
-          onClick={() => setTab('plan')}
+          onClick={() => { setTab('plan'); analytics.tabSwitched(id!, 'plan'); }}
         >
           План{overdueCount > 0 && <span className={styles.badge}>{overdueCount}</span>}
         </button>
         <button
           className={`${styles.tabBtn} ${tab === 'history' ? styles.tabActive : ''}`}
-          onClick={() => setTab('history')}
+          onClick={() => { setTab('history'); analytics.tabSwitched(id!, 'history'); }}
         >
           История
         </button>
