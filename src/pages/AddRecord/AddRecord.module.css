@@ -156,3 +156,19 @@
 .cancelBtn:active {
   background: var(--color-surface-active);
 }
+
+.deleteRecordBtn {
+  width: 100%;
+  padding: 15px;
+  background: transparent;
+  color: #c62828;
+  border: 1.5px solid #c62828;
+  border-radius: 14px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.deleteRecordBtn:active {
+  background: #ffebee;
+}

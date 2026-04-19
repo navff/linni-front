@@ -207,6 +207,20 @@ export function AddRecord() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm('Удалить эту запись?')) return;
+    try {
+      await api.deleteRecord(carId!, recordId!);
+      analytics.recordDeleted(carId!);
+      hapticSuccess();
+      webApp.disableClosingConfirmation();
+      navigate(-1);
+    } catch (e: any) {
+      hapticError();
+      setError(e.message);
+    }
+  };
+
   const isFuel = form.recordType === 'fuel';
 
   return (
@@ -387,6 +401,11 @@ export function AddRecord() {
         <button className={styles.cancelBtn} onClick={() => navigate(-1)}>
           Отмена
         </button>
+        {isEdit && isFuel && (
+          <button className={styles.deleteRecordBtn} onClick={handleDelete}>
+            Удалить запись
+          </button>
+        )}
       </div>
     </div>
   );
