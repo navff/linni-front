@@ -29,7 +29,7 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_API_URL: https://navff-linni-back-f310.twc1.net
+          VITE_API_URL: https://b.linni.org
           # VITE_API_URL: https://bbaeptgd1brfqpo9i3mk.containers.yandexcloud.net
 
       - name: Upload to Yandex Object Storage
